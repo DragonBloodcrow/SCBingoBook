@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  collectionEntries CollectionEntry[]
+
+  @@map("users")
+}
+
+/// Catalog item (e.g. ship, component, location) for bingo/collection tracking
+model Item {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  category    String?
+  imageUrl    String?  @map("image_url")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  collectionEntries CollectionEntry[]
+
+  @@index([category])
+  @@map("items")
+}
+
+/// User-owned collection progress for an item
+model CollectionEntry {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  itemId    String   @map("item_id")
+  acquired  Boolean  @default(false)
+  quantity  Int      @default(1)
+  notes     String?
+  acquiredAt DateTime? @map("acquired_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@index([itemId])
+  @@map("collection_entries")
+}
