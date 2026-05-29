@@ -151,6 +151,17 @@ textarea:focus {
   margin-bottom: var(--space-md);
 }
 
+.lockout-banner {
+  background: rgba(255, 152, 0, 0.12);
+  border-color: #ff9800;
+  color: #ffe0b2;
+}
+
+.lockout-banner strong {
+  display: block;
+  color: #ffcc80;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

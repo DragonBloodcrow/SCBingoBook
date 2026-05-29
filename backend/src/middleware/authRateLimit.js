@@ -42,16 +42,13 @@ export const registerLimiter = rateLimit({
 });
 
 /**
- * Counts only failed login responses (4xx/5xx).
- * Five failures within 15 minutes triggers a cooldown (enforced with loginBruteForce).
+ * Count failed responses (non-2xx). Used together with loginBruteForce for cooldowns.
+ * skipSuccessfulRequests is evaluated when the response finishes (not at request start).
  */
-/** Only count invalid credentials (401), not validation errors. */
-const countOnlyFailedLogins = (_req, res) => res.statusCode !== 401;
-
 export const loginFailureLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES_MS,
   max: 5,
-  skip: countOnlyFailedLogins,
+  skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: (req, res, next, options) => {
@@ -65,13 +62,10 @@ export const loginFailureLimiter = rateLimit({
   },
 });
 
-/**
- * Ten failed logins within one hour → extended cooldown (25 minutes).
- */
 export const loginHourFailureLimiter = rateLimit({
   windowMs: ONE_HOUR_MS,
   max: 10,
-  skip: countOnlyFailedLogins,
+  skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: (req, res, next, options) => {

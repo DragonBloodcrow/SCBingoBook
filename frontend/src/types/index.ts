@@ -41,9 +41,11 @@ export interface AuthResponse {
   token: string;
 }
 
-export interface ApiError {
+export interface ApiErrorBody {
   error: {
     message: string;
+    code?: string;
+    retryAfterSeconds?: number;
     details?: unknown;
   };
 }

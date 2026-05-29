@@ -6,7 +6,12 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 const attemptsByIp = new Map();
 
 export function getClientIp(req) {
-  return req.ip ?? 'unknown';
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim().replace(/^::ffff:/, '');
+  }
+  const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
+  return String(ip).replace(/^::ffff:/, '');
 }
 
 function getOrCreateRecord(ip) {
@@ -20,6 +25,7 @@ function getOrCreateRecord(ip) {
   if (record.lockedUntil > 0 && now >= record.lockedUntil) {
     record.lockedUntil = 0;
     record.lockTier = 0;
+    record.failures = 0;
   }
 
   attemptsByIp.set(ip, record);
@@ -73,7 +79,20 @@ export function clearLoginAttempts(req) {
   attemptsByIp.delete(getClientIp(req));
 }
 
-/** Prevent unbounded memory growth on long-running containers. */
+/**
+ * Track login result when the response is sent (reliable vs. try/catch in controller).
+ */
+export function trackLoginResult(req, res, next) {
+  res.on('finish', () => {
+    if (res.statusCode === 401) {
+      recordFailedLogin(req);
+    } else if (res.statusCode >= 200 && res.statusCode < 300) {
+      clearLoginAttempts(req);
+    }
+  });
+  next();
+}
+
 export function pruneExpiredAttempts() {
   const now = Date.now();
   for (const [ip, record] of attemptsByIp.entries()) {

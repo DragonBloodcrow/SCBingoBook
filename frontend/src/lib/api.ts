@@ -1,4 +1,4 @@
-import type { ApiError } from '../types';
+import type { ApiErrorBody } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -8,13 +8,21 @@ type RequestOptions = RequestInit & {
 
 export class ApiClientError extends Error {
   status: number;
+  code?: string;
+  retryAfterSeconds?: number;
   details?: unknown;
 
-  constructor(message: string, status: number, details?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    options?: { code?: string; retryAfterSeconds?: number; details?: unknown }
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;
-    this.details = details;
+    this.code = options?.code;
+    this.retryAfterSeconds = options?.retryAfterSeconds;
+    this.details = options?.details;
   }
 }
 
@@ -36,12 +44,12 @@ export async function apiRequest<T>(
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const err = body as ApiError;
-    throw new ApiClientError(
-      err.error?.message ?? 'Request failed',
-      response.status,
-      err.error?.details
-    );
+    const err = body as ApiErrorBody;
+    throw new ApiClientError(err.error?.message ?? 'Request failed', response.status, {
+      code: err.error?.code,
+      retryAfterSeconds: err.error?.retryAfterSeconds,
+      details: err.error?.details,
+    });
   }
 
   return body as T;

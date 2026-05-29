@@ -7,7 +7,7 @@ import {
   loginHourFailureLimiter,
   registerLimiter,
 } from '../middleware/authRateLimit.js';
-import { checkLoginLockout } from '../middleware/loginBruteForce.js';
+import { checkLoginLockout, trackLoginResult } from '../middleware/loginBruteForce.js';
 import * as authController from '../controllers/auth.controller.js';
 import { loginSchema, registerSchema } from '../validators/auth.schema.js';
 
@@ -20,9 +20,10 @@ authRouter.post('/register', registerLimiter, validate(registerSchema), authCont
 authRouter.post(
   '/login',
   checkLoginLockout,
+  validate(loginSchema),
   loginFailureLimiter,
   loginHourFailureLimiter,
-  validate(loginSchema),
+  trackLoginResult,
   authController.login
 );
 
