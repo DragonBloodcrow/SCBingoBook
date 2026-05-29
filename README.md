@@ -5,7 +5,7 @@ Star Citizen collection and bingo tracking — Docker Compose deployment for an 
 ## Quick deploy
 
 ```bash
-git clone https://github.com/YOUR_USER/SCBingoBook.git
+git clone https://github.com/DragonBloodcrow/SCBingoBook.git
 cd SCBingoBook
 
 cp .env.example .env
