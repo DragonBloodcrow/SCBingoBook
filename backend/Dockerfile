@@ -10,8 +10,6 @@ WORKDIR /app/backend
 RUN npm install
 COPY backend/ ./
 
-RUN npx prisma generate --schema=../prisma/schema.prisma
-
 # --- Production image ---
 FROM node:22-alpine AS runner
 
@@ -29,10 +27,10 @@ RUN chmod +x /docker-entrypoint.sh
 COPY --from=builder /app/backend/node_modules ./node_modules
 COPY --from=builder /app/backend/src ./src
 
-EXPOSE 3001
+# Generate Prisma Client into ./node_modules (must run in final image path)
+RUN npx prisma generate --schema=/app/prisma/schema.prisma
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://127.0.0.1:3001/health || exit 1
+EXPOSE 3001
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "src/index.js"]

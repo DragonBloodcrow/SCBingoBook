@@ -2,7 +2,8 @@
 set -e
 
 # Build DATABASE_URL with URL-encoded credentials (fixes special chars like ! ? @ in passwords)
-if [ -z "$DATABASE_URL" ]; then
+# Use DATABASE_URL from .env only if non-empty; otherwise build from POSTGRES_* (URL-encoded)
+if [ -z "${DATABASE_URL:-}" ]; then
   export DATABASE_URL=$(node -e "
     const u = process.env.POSTGRES_USER || '';
     const p = process.env.POSTGRES_PASSWORD || '';
@@ -23,7 +24,7 @@ npx prisma migrate deploy --schema=/app/prisma/schema.prisma
 
 if [ "${RUN_SEED:-false}" = "true" ]; then
   echo "Seeding catalog items..."
-  cd /app/backend && node /app/prisma/seed.js
+  node /app/prisma/seed.js
 fi
 
 echo "Starting API..."
